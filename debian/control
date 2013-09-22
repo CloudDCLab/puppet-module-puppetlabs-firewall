@@ -1,0 +1,29 @@
+Source: puppet-module-puppetlabs-firewall
+Section: admin
+Priority: optional
+Maintainer: Puppet Package Maintainers <pkg-puppet-devel@lists.alioth.debian.org>
+Uploaders:
+ Stig Sandbeck Mathisen <ssm@debian.org>,
+ Thomas Bechtold <thomasbechtold@jpberlin.de>,
+Build-Depends: debhelper (>= 8)
+Standards-Version: 3.9.4
+Vcs-Git: git://git.debian.org/git/pkg-puppet/puppet-module-puppetlabs-firewall.git
+Vcs-Browser: http://git.debian.org/?p=pkg-puppet/puppet-module-puppetlabs-firewall.git;a=summary
+Homepage: https://forge.puppetlabs.com/puppetlabs/firewall
+
+Package: puppet-module-puppetlabs-firewall
+Section: admin
+Architecture: all
+Depends: ${misc:Depends},
+         puppet-common,
+         iptables,
+         ebtables,
+Description: Puppet module for Firewall management
+ Puppet lets you centrally manage every important aspect of your system
+ using a cross-platform specification language that manages all the
+ separate elements normally aggregated in different files, like users,
+ cron jobs, and hosts, along with obviously discrete elements like
+ packages, services, and files.
+ .
+ The Firewall module lets you manage firewall rules with Puppet.
+ This module offers support for iptables, ip6tables, and ebtables.

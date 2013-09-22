@@ -1,0 +1,4 @@
+Modulefile usr/share/puppet/modules.available/puppetlabs-firewall
+metadata.json usr/share/puppet/modules.available/puppetlabs-firewall
+manifests usr/share/puppet/modules.available/puppetlabs-firewall
+lib usr/share/puppet/modules.available/puppetlabs-firewall
