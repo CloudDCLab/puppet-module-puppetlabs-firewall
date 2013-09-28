@@ -16,8 +16,8 @@ Section: admin
 Architecture: all
 Depends: ${misc:Depends},
          puppet-common,
-         iptables,
-         ebtables,
+Suggests: iptables,
+          ebtables,
 Description: Puppet module for Firewall management
  Puppet lets you centrally manage every important aspect of your system
  using a cross-platform specification language that manages all the
