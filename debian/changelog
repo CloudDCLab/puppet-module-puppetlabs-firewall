@@ -1,5 +1,6 @@
-puppet-module-puppetlabs-firewall (0.4.2-1) UNRELEASED; urgency=low
+puppet-module-puppetlabs-firewall (0.4.2-1) unstable; urgency=low
 
+  [ Thomas Bechtold ]
   * Initial release (Closes: #724012)
 
- -- Thomas Bechtold <thomasbechtold@jpberlin.de>  Sun, 22 Sep 2013 05:41:19 -0000
+ -- Stig Sandbeck Mathisen <ssm@debian.org>  Mon, 14 Oct 2013 10:53:12 +0200
