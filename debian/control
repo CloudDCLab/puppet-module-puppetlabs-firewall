@@ -12,7 +12,6 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-puppet/puppet-module-puppet
 Homepage: https://forge.puppetlabs.com/puppetlabs/firewall
 
 Package: puppet-module-puppetlabs-firewall
-Section: admin
 Architecture: all
 Depends: ${misc:Depends},
          puppet-common,
