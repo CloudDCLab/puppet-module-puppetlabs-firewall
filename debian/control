@@ -7,8 +7,8 @@ Uploaders:
  Thomas Bechtold <thomasbechtold@jpberlin.de>,
 Build-Depends: debhelper (>= 8)
 Standards-Version: 3.9.4
-Vcs-Git: git://git.debian.org/git/pkg-puppet/puppet-module-puppetlabs-firewall.git
-Vcs-Browser: http://git.debian.org/?p=pkg-puppet/puppet-module-puppetlabs-firewall.git;a=summary
+Vcs-Git: git://anonscm.debian.org/git/pkg-puppet/puppet-module-puppetlabs-firewall.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-puppet/puppet-module-puppetlabs-firewall.git;a=summary
 Homepage: https://forge.puppetlabs.com/puppetlabs/firewall
 
 Package: puppet-module-puppetlabs-firewall
