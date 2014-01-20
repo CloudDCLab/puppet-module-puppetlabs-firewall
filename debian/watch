@@ -1,2 +1,2 @@
 version=3
-opts=filenamemangle=s{/([^/]+)/([^/]+)/([^/]+.tar.gz)}{$1-$2-$3} https://forge.puppetlabs.com/puppetlabs/firewall /puppetlabs/firewall/(.+).tar.gz
+http://qa.debian.org/cgi-bin/fakeupstream.cgi?upstream=forge.puppetlabs/puppetlabs/firewall .*/puppetlabs-firewall-(.+)\.tar\.gz

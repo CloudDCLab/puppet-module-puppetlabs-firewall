@@ -1,3 +1,12 @@
+puppet-module-puppetlabs-firewall (0.4.2-2) UNRELEASED; urgency=medium
+
+  * debian/watch: use redirector from qa.debian.org.
+  * debian/control:
+    - use Debian address in Uploaders field.
+    - Bump Standards-Version to 3.9.5. No further changes.
+
+ -- Thomas Bechtold <toabctl@debian.org>  Mon, 20 Jan 2014 08:27:36 +0100
+
 puppet-module-puppetlabs-firewall (0.4.2-1) unstable; urgency=low
 
   [ Thomas Bechtold ]
