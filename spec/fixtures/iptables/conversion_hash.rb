@@ -6,6 +6,19 @@
 # This hash is for testing a line conversion to a hash of parameters
 # which will be used to create a resource.
 ARGS_TO_HASH = {
+  'dport_and_sport' => {
+    :line => '-A nova-compute-FORWARD -s 0.0.0.0/32 -d 255.255.255.255/32 -p udp -m udp --sport 68 --dport 67 -j ACCEPT',
+    :table => 'filter',
+    :params => {
+      :action => 'accept',
+      :chain => 'nova-compute-FORWARD',
+      :source => '0.0.0.0/32',
+      :destination => '255.255.255.255/32',
+      :sport => ['68'],
+      :dport => ['67'],
+      :proto => 'udp',
+    },
+  },
   'long_rule_1' => {
     :line => '-A INPUT -s 1.1.1.1/32 -d 1.1.1.1/32 -p tcp -m multiport --dports 7061,7062 -m multiport --sports 7061,7062 -m comment --comment "000 allow foo" -j ACCEPT',
     :table => 'filter',
@@ -89,6 +102,30 @@ ARGS_TO_HASH = {
       :destination => '2001:db8:4321::/48',
     },
   },
+  'source_destination_negate_source' => {
+    :line => '-A INPUT ! -s 1.1.1.1 -d 2.2.2.2 -m comment --comment "000 negated source address"',
+    :table => 'filter',
+    :params => {
+      :source => '! 1.1.1.1/32',
+      :destination => '2.2.2.2/32',
+    },
+  },
+  'source_destination_negate_destination' => {
+    :line => '-A INPUT -s 1.1.1.1 ! -d 2.2.2.2 -m comment --comment "000 negated destination address"',
+    :table => 'filter',
+    :params => {
+      :source => '1.1.1.1/32',
+      :destination => '! 2.2.2.2/32',
+    },
+  },
+  'source_destination_negate_destination_alternative' => {
+    :line => '-A INPUT -s 1.1.1.1 -d ! 2.2.2.2 -m comment --comment "000 negated destination address alternative"',
+    :table => 'filter',
+    :params => {
+      :source => '1.1.1.1/32',
+      :destination => '! 2.2.2.2/32',
+    },
+  },
   'dport_range_1' => {
     :line => '-A INPUT -m multiport --dports 1:1024 -m comment --comment "000 allow foo"',
     :table => 'filter',
@@ -167,6 +204,14 @@ ARGS_TO_HASH = {
     :table => 'filter',
     :params => {
       :state => ['ESTABLISHED', 'INVALID', 'RELATED'],
+      :action => nil,
+    },
+  },
+  'ctstate_returns_sorted_values' => {
+    :line => '-A INPUT -m conntrack --ctstate INVALID,RELATED,ESTABLISHED',
+    :table => 'filter',
+    :params => {
+      :ctstate => ['ESTABLISHED', 'INVALID', 'RELATED'],
       :action => nil,
     },
   },
@@ -539,7 +584,7 @@ HASH_TO_ARGS = {
       :table => 'filter',
       :dst_range => '10.0.0.1-10.0.0.10',
     },
-    :args => ['-t', :filter, '-m', 'iprange', '--dst-range', '10.0.0.1-10.0.0.10', '-p', :tcp, '-m', 'comment', '--comment', '000 dst_range'],
+    :args => ['-t', :filter, '-p', :tcp, '-m', 'iprange', '--dst-range', '10.0.0.1-10.0.0.10', '-m', 'comment', '--comment', '000 dst_range'],
   },
   'src_range_1' => {
     :params => {
@@ -547,7 +592,7 @@ HASH_TO_ARGS = {
       :table => 'filter',
       :dst_range => '10.0.0.1-10.0.0.10',
     },
-    :args => ['-t', :filter, '-m', 'iprange', '--dst-range', '10.0.0.1-10.0.0.10', '-p', :tcp, '-m', 'comment', '--comment', '000 src_range'],
+    :args => ['-t', :filter, '-p', :tcp, '-m', 'iprange', '--dst-range', '10.0.0.1-10.0.0.10', '-m', 'comment', '--comment', '000 src_range'],
   },
   'tcp_flags_1' => {
     :params => {
@@ -566,6 +611,15 @@ HASH_TO_ARGS = {
     },
     :args => ["-t", :filter, "-p", :tcp, "-m", "comment", "--comment", "100 states_set_from_array",
       "-m", "state", "--state", "ESTABLISHED,INVALID"],
+  },
+  'ctstates_set_from_array' => {
+    :params => {
+      :name => "100 ctstates_set_from_array",
+      :table => "filter",
+      :ctstate => ['ESTABLISHED', 'INVALID']
+    },
+    :args => ["-t", :filter, "-p", :tcp, "-m", "comment", "--comment", "100 ctstates_set_from_array",
+      "-m", "conntrack", "--ctstate", "ESTABLISHED,INVALID"],
   },
   'comment_string_character_validation' => {
     :params => {

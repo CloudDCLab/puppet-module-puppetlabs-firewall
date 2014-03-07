@@ -8,18 +8,18 @@ describe firewall do
   before :each do
     @class = firewall
     @provider = double 'provider'
-    @provider.stubs(:name).returns(:iptables)
-    Puppet::Type::Firewall.stubs(:defaultprovider).returns @provider
+    allow(@provider).to receive(:name).and_return(:iptables)
+    allow(Puppet::Type::Firewall).to receive(:defaultprovider).and_return @provider
 
     @resource = @class.new({:name  => '000 test foo'})
 
     # Stub iptables version
-    Facter.fact(:iptables_version).stubs(:value).returns("1.4.2")
-    Facter.fact(:ip6tables_version).stubs(:value).returns("1.4.2")
+    allow(Facter.fact(:iptables_version)).to receive(:value).and_return('1.4.2')
+    allow(Facter.fact(:ip6tables_version)).to receive(:value).and_return('1.4.2')
 
     # Stub confine facts
-    Facter.fact(:kernel).stubs(:value).returns("Linux")
-    Facter.fact(:operatingsystem).stubs(:value).returns("Debian")
+    allow(Facter.fact(:kernel)).to receive(:value).and_return('Linux')
+    allow(Facter.fact(:operatingsystem)).to receive(:value).and_return('Debian')
   end
 
   it 'should have :name be its namevar' do
@@ -129,6 +129,10 @@ describe firewall do
           @resource[addr] = prefix
           @resource[addr].should == nil
         end
+      end
+      it "should accept a negated #{addr} as a string" do
+        @resource[addr] = '! 127.0.0.1'
+        @resource[addr].should == '! 127.0.0.1/32'
       end
     end
   end
@@ -316,6 +320,23 @@ describe firewall do
     end
   end
 
+  describe ':ctstate' do
+    it 'should accept value as a string' do
+      @resource[:ctstate] = :INVALID
+      @resource[:ctstate].should == [:INVALID]
+    end
+
+    it 'should accept value as an array' do
+      @resource[:ctstate] = [:INVALID, :NEW]
+      @resource[:ctstate].should == [:INVALID, :NEW]
+    end
+
+    it 'should sort values alphabetically' do
+      @resource[:ctstate] = [:NEW, :ESTABLISHED]
+      @resource[:ctstate].should == [:ESTABLISHED, :NEW]
+    end
+  end
+
   describe ':burst' do
     it 'should accept numeric values' do
       @resource[:burst] = 12
@@ -324,6 +345,15 @@ describe firewall do
 
     it 'should fail if value is not numeric' do
       lambda { @resource[:burst] = 'foo' }.should raise_error(Puppet::Error)
+    end
+  end
+
+  describe ':recent' do
+    ['set', 'update', 'rcheck', 'remove'].each do |recent|
+      it "should accept recent value #{recent}" do
+        @resource[:recent] = recent
+        @resource[:recent].should == "--#{recent}"
+      end
     end
   end
 
@@ -362,8 +392,8 @@ describe firewall do
       describe "with iptables #{iptables_version}" do
         before {
           Facter.clear
-          Facter.fact(:iptables_version).stubs(:value).returns(iptables_version)
-          Facter.fact(:ip6tables_version).stubs(:value).returns(iptables_version)
+          allow(Facter.fact(:iptables_version)).to receive(:value).and_return iptables_version
+          allow(Facter.fact(:ip6tables_version)).to receive(:value).and_return iptables_version
         }
 
         if iptables_version == '1.3.2'
@@ -485,6 +515,67 @@ describe firewall do
         rel = @resource.autorequire[0]
         rel.source.ref.should == chain.ref
         rel.target.ref.should == @resource.ref
+      end
+
+      # test where autorequire is still needed (table != filter)
+      ['INPUT', 'OUTPUT', 'FORWARD'].each do |test_chain|
+        it "should autorequire fwchain #{test_chain} when table is mangle and provider is undefined" do
+          @resource[param] = test_chain
+          @resource[:table] = :mangle
+          @resource[:provider].should == :iptables
+
+          chain = Puppet::Type.type(:firewallchain).new(:name => "#{test_chain}:mangle:IPv4")
+          catalog = Puppet::Resource::Catalog.new
+          catalog.add_resource @resource
+          catalog.add_resource chain
+          rel = @resource.autorequire[0]
+          rel.source.ref.should == chain.ref
+          rel.target.ref.should == @resource.ref
+        end
+
+        it "should autorequire fwchain #{test_chain} when table is mangle and provider is ip6tables" do
+          @resource[param] = test_chain
+          @resource[:table] = :mangle
+          @resource[:provider] = :ip6tables
+
+          chain = Puppet::Type.type(:firewallchain).new(:name => "#{test_chain}:mangle:IPv6")
+          catalog = Puppet::Resource::Catalog.new
+          catalog.add_resource @resource
+          catalog.add_resource chain
+          rel = @resource.autorequire[0]
+          rel.source.ref.should == chain.ref
+          rel.target.ref.should == @resource.ref
+        end
+      end
+
+      # test of case where autorequire should not happen
+      ['INPUT', 'OUTPUT', 'FORWARD'].each do |test_chain|
+
+        it "should not autorequire fwchain #{test_chain} when table and provider are undefined" do
+          @resource[param] = test_chain
+          @resource[:table].should == :filter
+          @resource[:provider].should == :iptables
+
+          chain = Puppet::Type.type(:firewallchain).new(:name => "#{test_chain}:filter:IPv4")
+          catalog = Puppet::Resource::Catalog.new
+          catalog.add_resource @resource
+          catalog.add_resource chain
+          rel = @resource.autorequire[0]
+          rel.should == nil
+        end
+
+        it "should not autorequire fwchain #{test_chain} when table is undefined and provider is ip6tables" do
+          @resource[param] = test_chain
+          @resource[:table].should == :filter
+          @resource[:provider] = :ip6tables
+
+          chain = Puppet::Type.type(:firewallchain).new(:name => "#{test_chain}:filter:IPv6")
+          catalog = Puppet::Resource::Catalog.new
+          catalog.add_resource @resource
+          catalog.add_resource chain
+          rel = @resource.autorequire[0]
+          rel.should == nil
+        end
       end
     end
   end
