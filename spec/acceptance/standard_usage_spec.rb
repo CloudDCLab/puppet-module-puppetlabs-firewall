@@ -1,8 +1,8 @@
-require 'spec_helper_system'
+require 'spec_helper_acceptance'
 
 # Some tests for the standard recommended usage
 describe 'standard usage tests:' do
-  context 'standard 1' do
+  it 'applies twice' do
     pp = <<-EOS
       class my_fw::pre {
         Firewall {
@@ -21,7 +21,7 @@ describe 'standard usage tests:' do
         }->
         firewall { '002 accept related established rules':
           proto   => 'all',
-          state   => ['RELATED', 'ESTABLISHED'],
+          ctstate => ['RELATED', 'ESTABLISHED'],
           action  => 'accept',
         }
       }
@@ -48,12 +48,8 @@ describe 'standard usage tests:' do
       }
     EOS
 
-    context puppet_apply(pp) do
-      its(:stderr) { should be_empty }
-      its(:exit_code) { should_not == 1 }
-      its(:refresh) { should be_nil }
-      its(:stderr) { should be_empty }
-      its(:exit_code) { should be_zero }
-    end
+    # Run it twice and test for idempotency
+    apply_manifest(pp, :catch_failures => true)
+    expect(apply_manifest(pp, :catch_failures => true).exit_code).to be_zero
   end
 end

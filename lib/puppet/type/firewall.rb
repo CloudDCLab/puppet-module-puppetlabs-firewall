@@ -28,7 +28,9 @@ Puppet::Type.newtype(:firewall) do
     installed.
   EOS
 
+  feature :hop_limiting, "Hop limiting features."
   feature :rate_limiting, "Rate limiting features."
+  feature :recent_limiting, "The netfilter recent module"
   feature :snat, "Source NATing"
   feature :dnat, "Destination NATing"
   feature :interface_match, "Interface matching"
@@ -45,6 +47,11 @@ Puppet::Type.newtype(:firewall) do
   feature :isfragment, "Match fragments"
   feature :address_type, "The ability match on source or destination address type"
   feature :iprange, "The ability match on source or destination IP range "
+  feature :ishasmorefrags, "Match a non-last fragment of a fragmented ipv6 packet - might be first"
+  feature :islastfrag, "Match the last fragment of an ipv6 packet"
+  feature :isfirstfrag, "Match the first fragment of a fragmented ipv6 packet"
+  feature :ipsec_policy, "Match IPsec policy"
+  feature :ipsec_dir, "Match IPsec policy direction"
 
   # provider specific features
   feature :iptables, "The provider provides iptables features."
@@ -103,12 +110,16 @@ Puppet::Type.newtype(:firewall) do
 
           source => '192.168.2.0/24'
 
+      You can also negate a mask by putting ! in front. For example:
+
+          source => '! 192.168.2.0/24'
+
       The source can also be an IPv6 address if your provider supports it.
     EOS
 
     munge do |value|
       begin
-        @resource.host_to_ip(value)
+        @resource.host_to_mask(value)
       rescue Exception => e
         self.fail("host_to_ip failed for #{value}, exception #{e}")
       end
@@ -134,12 +145,16 @@ Puppet::Type.newtype(:firewall) do
 
           destination => '192.168.1.0/24'
 
+      You can also negate a mask by putting ! in front. For example:
+
+          destination  => '! 192.168.2.0/24'
+
       The destination can also be an IPv6 address if your provider supports it.
     EOS
 
     munge do |value|
       begin
-        @resource.host_to_ip(value)
+        @resource.host_to_mask(value)
       rescue Exception => e
         self.fail("host_to_ip failed for #{value}, exception #{e}")
       end
@@ -441,6 +456,15 @@ Puppet::Type.newtype(:firewall) do
     EOS
   end
 
+  newproperty(:random, :required_features => :dnat) do
+    desc <<-EOS
+      When using a jump value of "MASQUERADE", "DNAT", "REDIRECT", or "SNAT"
+      this boolean will enable randomized port mapping.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
   # Reject ICMP type
   newproperty(:reject, :required_features => :reject_type) do
     desc <<-EOS
@@ -549,6 +573,46 @@ Puppet::Type.newtype(:firewall) do
     end
   end
 
+  newproperty(:ctstate, :array_matching => :all, :required_features =>
+    :state_match) do
+
+    desc <<-EOS
+      Matches a packet based on its state in the firewall stateful inspection
+      table, using the conntrack module. Values can be:
+
+      * INVALID
+      * ESTABLISHED
+      * NEW
+      * RELATED
+    EOS
+
+    newvalues(:INVALID,:ESTABLISHED,:NEW,:RELATED)
+
+    # States should always be sorted. This normalizes the resource states to
+    # keep it consistent with the sorted result from iptables-save.
+    def should=(values)
+      @should = super(values).sort_by {|sym| sym.to_s}
+    end
+
+    def is_to_s(value)
+      should_to_s(value)
+    end
+
+    def should_to_s(value)
+      value = [value] unless value.is_a?(Array)
+      value.join(',')
+    end
+  end
+
+
+  # Hop limiting properties
+  newproperty(:hop_limit, :required_features => :hop_limiting) do
+    desc <<-EOS
+      Hop limiting value for matched packets.
+    EOS
+    newvalue(/^\d+$/)
+  end
+
   # Rate limiting properties
   newproperty(:limit, :required_features => :rate_limiting) do
     desc <<-EOS
@@ -640,6 +704,104 @@ Puppet::Type.newtype(:firewall) do
     newvalues(:true, :false)
   end
 
+  newproperty(:recent, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Enable the recent module. Takes as an argument one of set, update,
+      rcheck or remove. For example:
+
+        # If anyone's appeared on the 'badguy' blacklist within
+        # the last 60 seconds, drop their traffic, and update the timestamp.
+        firewall { '100 Drop badguy traffic':
+          recent   => 'update',
+          rseconds => 60,
+          rsource  => true,
+          rname    => 'badguy',
+          action   => 'DROP',
+          chain    => 'FORWARD',
+        }
+        # No-one should be sending us traffic on eth0 from localhost
+        # Blacklist them
+        firewall { '101 blacklist strange traffic':
+          recent      => 'set',
+          rsource     => true,
+          rname       => 'badguy',
+          destination => '127.0.0.0/8',
+          iniface     => 'eth0',
+          action      => 'DROP',
+          chain       => 'FORWARD',
+        }
+    EOS
+
+    newvalues(:set, :update, :rcheck, :remove)
+    munge do |value|
+       value = "--" + value
+    end
+  end
+
+  newproperty(:rdest, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; add the destination IP address to the list.
+      Must be boolean true.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
+  newproperty(:rsource, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; add the source IP address to the list.
+      Must be boolean true.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
+  newproperty(:rname, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; The name of the list. Takes a string argument.
+    EOS
+  end
+
+  newproperty(:rseconds, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; used in conjunction with one of `recent => 'rcheck'` or
+      `recent => 'update'`. When used, this will narrow the match to only
+      happen when the address is in the list and was seen within the last given
+      number of seconds.
+    EOS
+  end
+
+  newproperty(:reap, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; can only be used in conjunction with the `rseconds`
+      attribute. When used, this will cause entries older than 'seconds' to be
+      purged.  Must be boolean true.
+    EOS
+  end
+
+  newproperty(:rhitcount, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; used in conjunction with `recent => 'update'` or `recent
+      => 'rcheck'. When used, this will narrow the match to only happen when
+      the address is in the list and packets had been received greater than or
+      equal to the given value.
+    EOS
+  end
+
+  newproperty(:rttl, :required_features => :recent_limiting) do
+    desc <<-EOS
+      Recent module; may only be used in conjunction with one of `recent =>
+      'rcheck'` or `recent => 'update'`. When used, this will narrow the match
+      to only happen when the address is in the list and the TTL of the current
+      packet matches that of the packet which hit the `recent => 'set'` rule.
+      This may be useful if you have problems with people faking their source
+      address in order to DoS you via this module by disallowing others access
+      to your site by sending bogus packets to you.  Must be boolean true.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
   newproperty(:socket, :required_features => :socket) do
     desc <<-EOS
       If true, matches if an open socket can be found by doing a coket lookup
@@ -647,6 +809,47 @@ Puppet::Type.newtype(:firewall) do
     EOS
 
     newvalues(:true, :false)
+  end
+
+  newproperty(:ishasmorefrags, :required_features => :ishasmorefrags) do
+    desc <<-EOS
+      If true, matches if the packet has it's 'more fragments' bit set. ipv6.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
+  newproperty(:islastfrag, :required_features => :islastfrag) do
+    desc <<-EOS
+      If true, matches if the packet is the last fragment. ipv6.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
+  newproperty(:isfirstfrag, :required_features => :isfirstfrag) do
+    desc <<-EOS
+      If true, matches if the packet is the first fragment. 
+      Sadly cannot be negated. ipv6.
+    EOS
+
+    newvalues(:true, :false)
+  end
+
+  newproperty(:ipsec_policy, :required_features => :ipsec_policy) do
+	  desc <<-EOS
+	  	 Sets the ipsec policy type
+	  EOS
+
+	  newvalues(:none, :ipsec)
+  end
+
+  newproperty(:ipsec_dir, :required_features => :ipsec_dir) do
+	  desc <<-EOS
+	  	 Sets the ipsec policy direction
+	  EOS
+
+	  newvalues(:in, :out)
   end
 
   newparam(:line) do
@@ -667,8 +870,9 @@ Puppet::Type.newtype(:firewall) do
     end
 
     unless protocol.nil?
+      table = value(:table)
       [value(:chain), value(:jump)].each do |chain|
-        reqs << "#{chain}:#{value(:table)}:#{protocol}" unless chain.nil?
+        reqs << "#{chain}:#{table}:#{protocol}" unless ( chain.nil? || (['INPUT', 'OUTPUT', 'FORWARD'].include?(chain) && table == :filter) )
       end
     end
 
