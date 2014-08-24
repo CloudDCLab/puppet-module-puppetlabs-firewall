@@ -7,6 +7,7 @@ puppet-module-puppetlabs-firewall (1.1.3-1) UNRELEASED; urgency=medium
   * Add a Debian patch to support the change of init script name to
     netfilter-persistent introduced in iptables-persistent 1.0.
     (Closes: #748425)
+  * No longer install Modulefile, since this has been dropped upstream.
 
  -- Russ Allbery <rra@debian.org>  Sat, 23 Aug 2014 23:15:43 -0700
 
