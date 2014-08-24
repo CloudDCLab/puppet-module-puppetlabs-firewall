@@ -2,6 +2,7 @@ Puppet::Type.type(:firewall).provide :ip6tables, :parent => :iptables, :source =
   @doc = "Ip6tables type provider"
 
   has_feature :iptables
+  has_feature :connection_limiting
   has_feature :hop_limiting
   has_feature :rate_limiting
   has_feature :recent_limiting
@@ -26,6 +27,8 @@ Puppet::Type.type(:firewall).provide :ip6tables, :parent => :iptables, :source =
     :ip6tables_save => 'ip6tables-save',
   })
 
+  confine :kernel => :linux
+
   def initialize(*args)
     if Facter.fact('ip6tables_version').value.match /1\.3\.\d/
       raise ArgumentError, 'The ip6tables provider is not supported on version 1.3 of iptables'
@@ -46,6 +49,9 @@ Puppet::Type.type(:firewall).provide :ip6tables, :parent => :iptables, :source =
 
   @resource_map = {
     :burst => "--limit-burst",
+    :connlimit_above => "-m connlimit --connlimit-above",
+    :connlimit_mask => "--connlimit-mask",
+    :connmark => "-m connmark --mark",
     :ctstate => "-m conntrack --ctstate",
     :destination => "-d",
     :dport => "-m multiport --dports",
@@ -126,6 +132,7 @@ Puppet::Type.type(:firewall).provide :ip6tables, :parent => :iptables, :source =
     :proto, :ishasmorefrags, :islastfrag, :isfirstfrag, :gid, :uid, :sport, :dport,
     :port, :pkttype, :name, :state, :ctstate, :icmp, :hop_limit, :limit, :burst,
     :recent, :rseconds, :reap, :rhitcount, :rttl, :rname, :rsource, :rdest,
-    :jump, :todest, :tosource, :toports, :log_level, :log_prefix, :reject]
+    :jump, :todest, :tosource, :toports, :log_level, :log_prefix, :reject,
+    :connlimit_above, :connlimit_mask, :connmark]
 
 end

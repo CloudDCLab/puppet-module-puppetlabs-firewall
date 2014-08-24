@@ -12,18 +12,18 @@ def ip6tables_flush_all_tables
   end
 end
 
-unless ENV['RS_PROVISION'] == 'no'
+unless ENV['RS_PROVISION'] == 'no' or ENV['BEAKER_provision'] == 'no'
+  if hosts.first.is_pe?
+    install_pe
+  else
+    install_puppet
+  end
   hosts.each do |host|
-    # Install Puppet
-    if host.is_pe?
-      install_pe
-    else
-      install_package host, 'rubygems'
-      on host, 'gem install puppet --no-ri --no-rdoc'
-      on host, "mkdir -p #{host['distmoduledir']}"
-    end
+    on host, "mkdir -p #{host['distmoduledir']}"
   end
 end
+
+UNSUPPORTED_PLATFORMS = ['windows','Solaris','Darwin']
 
 RSpec.configure do |c|
   # Project root
