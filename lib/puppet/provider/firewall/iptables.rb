@@ -7,6 +7,7 @@ Puppet::Type.type(:firewall).provide :iptables, :parent => Puppet::Provider::Fir
   @doc = "Iptables type provider"
 
   has_feature :iptables
+  has_feature :connection_limiting
   has_feature :rate_limiting
   has_feature :recent_limiting
   has_feature :snat
@@ -27,6 +28,7 @@ Puppet::Type.type(:firewall).provide :iptables, :parent => Puppet::Provider::Fir
   has_feature :iprange
   has_feature :ipsec_dir
   has_feature :ipsec_policy
+  has_feature :mask
 
   optional_commands({
     :iptables => 'iptables',
@@ -34,6 +36,7 @@ Puppet::Type.type(:firewall).provide :iptables, :parent => Puppet::Provider::Fir
   })
 
   defaultfor :kernel => :linux
+  confine :kernel => :linux
 
   iptables_version = Facter.fact('iptables_version').value
   if (iptables_version and Puppet::Util::Package.versioncmp(iptables_version, '1.4.1') < 0)
@@ -45,50 +48,54 @@ Puppet::Type.type(:firewall).provide :iptables, :parent => Puppet::Provider::Fir
   @protocol = "IPv4"
 
   @resource_map = {
-    :burst => "--limit-burst",
-    :ctstate => "-m conntrack --ctstate",
-    :destination => "-d",
-    :dst_type => "-m addrtype --dst-type",
-    :dst_range => "-m iprange --dst-range",
-    :dport => ["-m multiport --dports", "--dport"],
-    :gid => "-m owner --gid-owner",
-    :icmp => "-m icmp --icmp-type",
-    :iniface => "-i",
-    :jump => "-j",
-    :limit => "-m limit --limit",
-    :log_level => "--log-level",
-    :log_prefix => "--log-prefix",
-    :name => "-m comment --comment",
-    :outiface => "-o",
-    :port => '-m multiport --ports',
-    :proto => "-p",
-    :random => "--random",
-    :rdest => "--rdest",
-    :reap => "--reap",
-    :recent => "-m recent",
-    :reject => "--reject-with",
-    :rhitcount => "--hitcount",
-    :rname => "--name",
-    :rseconds => "--seconds",
-    :rsource => "--rsource",
-    :rttl => "--rttl",
-    :set_mark => mark_flag,
-    :socket => "-m socket",
-    :source => "-s",
-    :src_type => "-m addrtype --src-type",
-    :src_range => "-m iprange --src-range",
-    :sport => ["-m multiport --sports", "--sport"],
-    :state => "-m state --state",
-    :table => "-t",
-    :tcp_flags => "-m tcp --tcp-flags",
-    :todest => "--to-destination",
-    :toports => "--to-ports",
-    :tosource => "--to-source",
-    :uid => "-m owner --uid-owner",
-    :pkttype => "-m pkttype --pkt-type",
-    :isfragment => "-f",
-    :ipsec_dir => "-m policy --dir",
-    :ipsec_policy => "--pol",
+    :burst           => "--limit-burst",
+    :connlimit_above => "-m connlimit --connlimit-above",
+    :connlimit_mask  => "--connlimit-mask",
+    :connmark        => "-m connmark --mark",
+    :ctstate         => "-m conntrack --ctstate",
+    :destination     => "-d",
+    :dst_type        => "-m addrtype --dst-type",
+    :dst_range       => "-m iprange --dst-range",
+    :dport           => ["-m multiport --dports", "--dport"],
+    :gid             => "-m owner --gid-owner",
+    :icmp            => "-m icmp --icmp-type",
+    :iniface         => "-i",
+    :jump            => "-j",
+    :limit           => "-m limit --limit",
+    :log_level       => "--log-level",
+    :log_prefix      => "--log-prefix",
+    :name            => "-m comment --comment",
+    :outiface        => "-o",
+    :port            => '-m multiport --ports',
+    :proto           => "-p",
+    :random          => "--random",
+    :rdest           => "--rdest",
+    :reap            => "--reap",
+    :recent          => "-m recent",
+    :reject          => "--reject-with",
+    :rhitcount       => "--hitcount",
+    :rname           => "--name",
+    :rseconds        => "--seconds",
+    :rsource         => "--rsource",
+    :rttl            => "--rttl",
+    :set_mark        => mark_flag,
+    :socket          => "-m socket",
+    :source          => "-s",
+    :src_type        => "-m addrtype --src-type",
+    :src_range       => "-m iprange --src-range",
+    :sport           => ["-m multiport --sports", "--sport"],
+    :state           => "-m state --state",
+    :table           => "-t",
+    :tcp_flags       => "-m tcp --tcp-flags",
+    :todest          => "--to-destination",
+    :toports         => "--to-ports",
+    :tosource        => "--to-source",
+    :uid             => "-m owner --uid-owner",
+    :pkttype         => "-m pkttype --pkt-type",
+    :isfragment      => "-f",
+    :ipsec_dir       => "-m policy --dir",
+    :ipsec_policy    => "--pol",
+    :mask            => '--mask',
   }
 
   # These are known booleans that do not take a value, but we want to munge
@@ -140,8 +147,9 @@ Puppet::Type.type(:firewall).provide :iptables, :parent => Puppet::Provider::Fir
     :src_range, :dst_range, :tcp_flags, :gid, :uid, :sport, :dport, :port,
     :dst_type, :src_type, :socket, :pkttype, :name, :ipsec_dir, :ipsec_policy,
     :state, :ctstate, :icmp, :limit, :burst, :recent, :rseconds, :reap,
-    :rhitcount, :rttl, :rname, :rsource, :rdest, :jump, :todest, :tosource,
-    :toports, :random, :log_prefix, :log_level, :reject, :set_mark
+    :rhitcount, :rttl, :rname, :mask, :rsource, :rdest, :jump, :todest,
+    :tosource, :toports, :random, :log_prefix, :log_level, :reject, :set_mark,
+    :connlimit_above, :connlimit_mask, :connmark
   ]
 
   def insert

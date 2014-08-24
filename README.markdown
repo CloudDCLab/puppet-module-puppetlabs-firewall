@@ -92,7 +92,7 @@ The `pre` class should be located in `my_fw/manifests/pre.pp` and should contain
       }->
       firewall { '002 accept related established rules':
         proto   => 'all',
-        ctstate => ['RELATED', 'ESTABLISHED'],
+        state => ['RELATED', 'ESTABLISHED'],
         action  => 'accept',
       }
     }
@@ -377,9 +377,9 @@ unsupported system will result in iptable rules failing to apply.
 
 ###Other
 
-Bugs can be reported using Github Issues:
+Bugs can be reported using JIRA issues
 
-<http://github.com/puppetlabs/puppetlabs-firewall/issues>
+<http://tickets.puppetlabs.com>
 
 ##Development
 
