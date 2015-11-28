@@ -1,0 +1,3 @@
+Tests: run
+Depends: @
+Restrictions: needs-root,allow-stderr
