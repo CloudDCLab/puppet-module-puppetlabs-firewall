@@ -7,7 +7,7 @@ describe 'firewall::linux', :type => :class do
   context 'RedHat like' do
     %w{RedHat CentOS Fedora}.each do |os|
       context "operatingsystem => #{os}" do
-        releases = (os == 'Fedora' ? [14,15,'Rawhide'] : [6,7])
+        releases = (os == 'Fedora' ? ['14','15','Rawhide'] : ['6','7'])
         releases.each do |osrel|
           context "operatingsystemrelease => #{osrel}" do
             let(:facts) { facts_default.merge({ :operatingsystem => os,
@@ -22,8 +22,11 @@ describe 'firewall::linux', :type => :class do
   context 'Debian like' do
     %w{Debian Ubuntu}.each do |os|
       context "operatingsystem => #{os}" do
-        let(:facts) { facts_default.merge({ :operatingsystem => os }) }
-        it { should contain_class('firewall::linux::debian').with_require('Package[iptables]') }
+        releases = (os == 'Debian' ? ['6','7','8'] : ['10.04','12.04','14.04'])
+        releases.each do |osrel|
+          let(:facts) { facts_default.merge({ :operatingsystem => os, :operatingsystemrelease => osrel}) }
+          it { should contain_class('firewall::linux::debian').with_require('Package[iptables]') }
+        end
       end
     end
   end

@@ -1,6 +1,6 @@
 require 'spec_helper_acceptance'
 
-if default['platform'] =~ /el-5/
+if default['platform'] =~ /el-5/ or default['platform'] =~ /sles-10/
   describe "firewall ip6tables doesn't work on 1.3.5 because --comment is missing", :unless => UNSUPPORTED_PLATFORMS.include?(fact('osfamily')) do
     before :all do
       ip6tables_flush_all_tables
@@ -37,7 +37,7 @@ else
         EOS
 
         apply_manifest(pp, :catch_failures => true)
-        apply_manifest(pp, :catch_changes => true)
+        apply_manifest(pp, :catch_changes => do_catch_changes)
 
         shell('ip6tables-save') do |r|
           expect(r.stdout).to match(/#{line_match}/)
@@ -56,7 +56,7 @@ else
             }
         EOS
 
-        apply_manifest(pp, :catch_changes => true)
+        apply_manifest(pp, :catch_changes => do_catch_changes)
 
         shell('ip6tables-save') do |r|
           expect(r.stdout).to match(/#{line_match}/)

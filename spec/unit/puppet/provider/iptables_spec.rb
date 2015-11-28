@@ -215,7 +215,6 @@ describe 'iptables provider' do
     ARGS_TO_HASH.each do |test_name,data|
       describe "for test data '#{test_name}'" do
         let(:resource) { provider.rule_to_hash(data[:line], data[:table], 0) }
-
         # If this option is enabled, make sure the parameters exactly match
         if data[:compare_all] then
           it "the parameter hash keys should be the same as returned by rules_to_hash" do
@@ -312,6 +311,27 @@ describe 'iptables provider' do
 
     it 'fails when modifying the chain' do
       expect { instance.chain = "OUTPUT" }.to raise_error(/is not supported/)
+    end
+  end
+
+  describe 'when inverting rules' do
+    let(:resource) {
+      Puppet::Type.type(:firewall).new({
+        :name  => '040 partial invert',
+        :table       => 'filter',
+        :action      => 'accept',
+        :chain       => 'nova-compute-FORWARD',
+        :source      => '0.0.0.0/32',
+        :destination => '255.255.255.255/32',
+        :sport       => ['! 78','79','http'],
+        :dport       => ['77','! 76'],
+        :proto       => 'udp',
+      })
+    }
+    let(:instance) { provider.new(resource) }
+
+    it 'fails when not all array items are inverted' do
+      expect { instance.insert }.to raise_error Puppet::Error, /but '79', '80' are not prefixed/
     end
   end
 

@@ -1,3 +1,125 @@
+##2015-08-25 - Supported Release 1.7.1
+###Summary
+
+This is a bugfix release to deprecate the port parameter. Using the unspecific 'port' parameter can lead to firewall rules that are unexpectedly too lax. It is recommended to always use the specific dport and sport parameters to avoid this ambiguity.
+
+####Bugfixes
+- Deprecate the port parameter
+
+##2015-07-28 - Supported Release 1.7.0
+###Summary
+
+This release includes numerous features, bugfixes and other improvements including Puppet 4 & PE 2015.2 support as well as ClusterIP and DSCP jump target support.
+
+####Features
+- Puppet 4 and PE 2015.2 official support
+- ClusterIP jump target (including options) now supported
+- DSCP jump target (including options) now supported
+- SLES 10 now compatible (but not supported)
+
+####Bugfixes
+- (MODULES-1967) Parse escape sequences from iptables
+- (MODULES-1592) Allow src_type and dst_type prefixed with '!' to pass validation
+- (MODULES-2186) - iptables rules with -A in comment now supported
+- (MODULES-1976) Revise rule name validation for ruby 1.9
+- Fix installation hang on Debian Jessie
+- Fix for physdev idempotency on EL5
+
+####Improvements
+- Documentation improvements
+- Enforce the seluser on selinux systems
+- All the relevent services are now autorequired by the firewall and firewallchain types
+- Replace Facter.fact().value() calls with Facter.value() to support Facter 3
+
+##2015-05-19 - Supported Release 1.6.0
+###Summary
+
+This release includes support for TEE, MSS, the time ipt module, Debian 8 support, and a number of test fixes and other improvements.
+
+####Features
+- Add TEE support
+- Add MSS support (including clamp-mss-to-pmtu support)
+- Add support for the time ipt module (-m time)
+- Add support for Debian 8
+- Add support for ICMPv6 types 'neighbour-{solicitation,advertisement}'
+- Add support for ICMPv6 type 'too-big'
+- Add support for new 'match_mark' property
+- Added 'ipv4' and 'ipv6' options to 'proto' property
+
+####Bugfixes
+- Fix for Systemd-based OSes where systemd needs restarted before being able to pick up new services (MODULES-1984)
+- Arch Linux package management fix
+
+##2015-03-31 - Supported Release 1.5.0
+###Summary
+
+This release includes physdev_is_bridged support, checksum_fill support, basic Gentoo compatibility, and a number of test fixes and improvements.
+
+####Features
+- Add `physdev_is_bridged` support
+- Add `checksum_fill` support
+- Add basic Gentoo compatibility (unsupported)
+
+####Bugfixes
+- Implementation for resource map munging to allow a single ipt module to be used multiple times in a single rule on older versions of iptables (MODULES-1808)
+- Test fixes
+
+##2015-01-27 - Supported Release 1.4.0
+###Summary
+
+This release includes physdev support, the ability to look up usernames from uuid, and a number of bugfixes
+
+####Features
+- Add `netmap` feature
+- Add `physdev` support
+- Add ability to look up username from uuid (MODULES-753, MODULES-1688)
+
+####Bugfixes
+- Sync iptables/ip6tables providers (MODULES-1612)
+- Fix package names for Amazon and Ubuntu 14.10 (MODULES-1029)
+- Fix overly aggressive gsub when `ensure => absent` (MODULES-1453)
+- Unable to parse `-m (tcp|udp)` rules (MODULES-1552)
+- Fix ip6tables provider when `iptables-ipv6` package isn't installed for EL6 (MODULES-633)
+- Test fixes
+
+##2014-12-16 - Supported Release 1.3.0
+###Summary
+
+This release includes a number of bugfixes and features, including fixing `tcp_flags` support, and added support for interface aliases, negation for iniface and outiface, and extra configurability for packages and service names.
+
+####Features
+- Add support for interface aliases (eth0:0) (MODULES-1469)
+- Add negation for iniface, outiface (MODULES-1470)
+- Make package and service names configurable (MODULES-1309)
+
+####Bugfixes
+- Fix test regexes for EL5 (MODULES-1565)
+- Fix `tcp_flags` support for ip6tables (MODULES-556)
+- Don't arbitrarily limit `set_mark` for certain chains
+
+##2014-11-04 - Supported Release 1.2.0
+###Summary
+
+This release has a number of new features and bugfixes, including rule inversion, future parser support, improved EL7 support, and the ability to purge ip6tables rules.
+
+####Features
+- Documentation updates!
+- Test updates!
+- Add ipset support
+- Enable rule inversion
+- Future parser support
+- Improved support for EL7
+- Support netfilter-persistent
+- Add support for statistics module
+- Add support for mac address source rules
+- Add cbt protocol
+
+####Bugfixes
+- Incorrect use of `source => :iptables` in the ip6tables provider was making it impossible to purge ip6tables rules (MODULES-41)
+- Don't require `toports` when `jump => 'REDIRECT'` (MODULES-1086)
+- Don't limit which chains iniface and outiface parameters can be used in
+- Don't fail on rules added with ipsec/strongswan (MODULES-796)
+
 ##2014-07-08 - Supported Release 1.1.3
 ###Summary
 This is a supported release with test coverage enhancements.
