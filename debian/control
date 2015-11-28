@@ -7,8 +7,8 @@ Uploaders:
  Russ Allbery <rra@debian.org>,
 Build-Depends: debhelper (>= 8)
 Standards-Version: 3.9.6
-Vcs-Git: git://anonscm.debian.org/pkg-puppet/puppet-module-puppetlabs-firewall.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-puppet/puppet-module-puppetlabs-firewall.git;a=summary
+Vcs-Git: https://anonscm.debian.org/git/pkg-puppet/puppet-module-puppetlabs-firewall.git
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-puppet/puppet-module-puppetlabs-firewall.git/
 Homepage: https://forge.puppetlabs.com/puppetlabs/firewall
 
 Package: puppet-module-puppetlabs-firewall
